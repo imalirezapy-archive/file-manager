@@ -2,30 +2,83 @@
 
 function validAddress($address)
 {
-    if (is_null($address)) {
-        return '';
+    $address = trim(urldecode($address));
+    if (is_null($address) or $address == '') {
+        return null;
     }
-    $pattern = '/([\w\d\.]+[\s\-]*)/';
+    $address = preg_replace('/[\\\|\/]+/', '\\', trim($address));
+    if ($address[strlen($address)-1] == '\\'){
+        $address = join('\\', array_filter(explode('\\', $address), fn($i) => $i != ''));
 
-    preg_match_all($pattern, trim($address), $matches);
-    $path = join('/', $matches[0]);
-    if (in_array($path, ['', '.'])) {
-        return '';
     }
-    return '/' . $path;
+
+//    preg_match('/^\w+\:(\\\[\w\d\-\s\.]+)*$/', $address, $matches);
+
+    return $address;
 }
 
-function listDirectory($address)
+function getParent($address)
 {
-//    $path = __DIR__ . validAddress($address);
-    $path = $address;
+    $address = validAddress($address);
+    $parent_address = explode('\\', $address);
+    $parent_address = join('\\', array_slice($parent_address, 0, count($parent_address)-1));
+    return $parent_address;
+
+};
+function fileInfo($address, $name)
+{
+    $address = validAddress($address);
+    $path = validAddress($address . '/' . $name);
 
     if (!file_exists($path)) {
         return [];
     }
 
-    $ls = array_slice(scandir( $path), 1);
-    sort($ls);
+    $fileNameParts = explode('.', $name);
+    $is_dir = is_dir($path);
+    $name = $is_dir ?
+            $name :
+            join('.', array_slice($fileNameParts, 0, count($fileNameParts)-1));
+
+    error_reporting(E_ERROR | E_PARSE);
+    $mime = mime_content_type($path) ?? null;
+
+
+
+
+    if ($name == '..') {
+        return [
+            'name' => $name,
+            'href' => "/?address=".getParent($address),
+        ];
+    }
+    return [
+        'name' => $name,
+        'href' => "$path",
+        'is_dir' => $is_dir,
+        'mime' => $mime,
+        'extension' => $is_dir ? 'Folder File' :  end($fileNameParts),
+        'size' => filesize($path)
+    ];
+}
+
+function listDirectory($address)
+{
+//    $path = __DIR__ . validAddress($address);
+
+    $address = validAddress($address);
+
+    if (!file_exists($address)) {
+        return abort(404);
+    }
+
+    $ls = array_slice(scandir($address), 1);
+
+
+    for ($i = 0; $i < count($ls); $i++) {
+        $ls[$i] = fileInfo($address,$ls[$i]);
+    }
+
     return $ls;
 }
 
@@ -35,7 +88,7 @@ function createFile($name, $address)
     $address = validAddress($address);
 
 //    $path = __DIR__."$address/$name";
-    $path = "$address/$name";
+    $path = "$address\\$name";
 
     if (file_exists($path) or $name == "") {
         return;
@@ -47,30 +100,28 @@ function createFile($name, $address)
 
 function createDirectory($name, $address)
 {
-    $name = validAddress($name);
     $address = validAddress($address);
 
 //    $path = __DIR__."$address$name";
-    $path = $address . $name;
+    $path = "$address\\$name";
 
-    if (file_exists($path) or $name == '') {
+    if (file_exists($path) or trim($name) == '') {
         return;
     }
 
     mkdir($path, 0777, true);
 }
 
-function deleteFile($name, $address)
+function deleteFile($address)
 {
     $address = validAddress($address);
 
-//    $path = __DIR__ . $address . '/' . $name;
-    $path =  $address . '/' . $name;
-    if ((!file_exists($path)) or $name == "") {
+
+    if ((!file_exists($address))) {
         return;
     }
 
-    unlink($path);
+    unlink($address);
 }
 
 function deleteDirectory($address)
@@ -86,10 +137,11 @@ function deleteDirectory($address)
         return unlink($path);
     }
 
-    foreach (listDirectory($address) as $item) {
-        if ($item == '..') {
+    foreach (scandir($address) as $item) {
+        if ($item == '..' || $item == '.') {
             continue;
         }
+
         if (!deleteDirectory($address . DIRECTORY_SEPARATOR . $item)) {
             return false;
         }
@@ -190,5 +242,113 @@ function moveFile($from, $to)
 function view($path, $data=[])
 {
     extract($data);
-    return require __DIR__ . '/views'.validAddress($path).'.view.php';
+
+    return require __DIR__ . '/views'. '/'.$path.'.view.php';
 }
+
+function dd($value)
+{
+    echo '<pre>';
+    var_dump($value);
+    echo '</pre>';
+
+    die();
+
+}
+
+function abort($code)
+{
+    http_response_code($code);
+
+    view('404');
+
+    die();
+}
+
+
+function addressMap()
+{
+
+    $address = validAddress(query('address'));
+    $map = [];
+    $href = '';
+    foreach (explode('\\', $address) as $dir) {
+        $href .= $dir . '/';
+        $url = validAddress($href);
+        if (!file_exists($url)) {
+            $url = null;
+        }
+        $map[] = [
+            'name' => $dir,
+            'href' => $url,
+        ];
+
+    }
+    return $map;
+}
+
+
+
+
+function copyDirectory(
+    string $sourceDirectory,
+    string $destinationDirectory,
+    string $childFolder = ''
+): void {
+    $directory = opendir($sourceDirectory);
+
+    if (is_dir($destinationDirectory) === false) {
+        mkdir($destinationDirectory);
+    }
+
+    if ($childFolder !== '') {
+        if (is_dir("$destinationDirectory/$childFolder") === false) {
+            mkdir("$destinationDirectory/$childFolder");
+        }
+
+        while (($file = readdir($directory)) !== false) {
+            if ($file === '.' || $file === '..') {
+                continue;
+            }
+
+            if (is_dir("$sourceDirectory/$file") === true) {
+                copyDirectory("$sourceDirectory/$file", "$destinationDirectory/$childFolder/$file");
+            } else {
+                copy("$sourceDirectory/$file", "$destinationDirectory/$childFolder/$file");
+            }
+        }
+
+        closedir($directory);
+
+        return;
+    }
+
+    while (($file = readdir($directory)) !== false) {
+        if ($file === '.' || $file === '..') {
+            continue;
+        }
+
+        if (is_dir("$sourceDirectory/$file") === true) {
+            copyDirectory("$sourceDirectory/$file", "$destinationDirectory/$file");
+        }
+        else {
+            copy("$sourceDirectory/$file", "$destinationDirectory/$file");
+        }
+    }
+
+    closedir($directory);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

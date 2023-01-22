@@ -101,12 +101,13 @@ function solve()
         $routeCallback = getCallbackFromDynamicRoute();
 
         if (!$routeCallback) {
-            throw new Exception('not found');
+            abort(404);
         }
 
         $callback = $routeCallback[0];
         $params = $routeCallback[1];
     }
+
     return call_user_func($callback, ...array_values($params));
 }
 

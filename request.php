@@ -6,11 +6,16 @@ function getMethod() : string
     if ($method == 'get') {
         return $method;
     }
-    $method = 'post';
-    if (isset($_POST['_method']) and in_array($_POST['_method'], ['put', 'patch', 'delete', 'post'])) {
-        $method = $_POST['_method'];
+
+    if (isset($_POST['_method'])) {
+        $method = strtolower($_POST['_method']);
+        if (in_array($method, ['put', 'patch', 'delete'])) {
+            return $method;
+        };
     }
-    return $method;
+
+    return 'post';
+
 }
 
 function getUrl() : string
@@ -40,7 +45,10 @@ function query(string $key=null)
     $data = filter_input_array(INPUT_GET, FILTER_SANITIZE_SPECIAL_CHARS);
 
     if (!is_null($key)) {
-        return $data[$key] ?? null;
+        if (isset($data[$key])) {
+            return urldecode($data[$key]);
+        }
+        return null;
     }
 
     return $data;

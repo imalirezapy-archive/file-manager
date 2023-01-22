@@ -18,3 +18,26 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/4.5.6/css/ionicons.min.css"
       integrity="sha512-0/rEDduZGrqo4riUlwqyuHDQzp2D1ZCgH/gFIfjMIL5az8so6ZiXyhf1Rg8i6xsjv+z/Ubc4tt1thLigEcu6Ug=="
       crossorigin="anonymous" referrerpolicy="no-referrer"/>
+
+
+<div class="container-lg flex-grow-1 light-style container-p-y mt-5">
+    <div class="container-m-nx container-m-ny bg-lightest mb-3">
+        <ol class="breadcrumb text-big container-p-x py-3 m-0" >
+
+            <?php
+            $addressMap = addressMap();
+            foreach ($addressMap as $key => $dir){
+                if (($key == count($addressMap) - 1) or is_null($dir['href'])) {?>
+                    <li class="breadcrumb-item active"><?= $dir['name'] ?></li>
+                <?php continue; } ?>
+                <li class="breadcrumb-item ">
+                    <a href="/?address=<?= $dir['href'] ?>"><?= $dir['name'] ?></a>
+                </li>
+
+            <?php } ?>
+
+        </ol>
+        <hr class="m-0"/>
+    </div>
+
+
