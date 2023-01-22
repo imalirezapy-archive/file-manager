@@ -193,10 +193,50 @@ function copyController()
     return;
 }
 
+function moveIndexController()
+{
+    $address = validAddress(query('address'));
+
+    if ($address == null || !file_exists($address)) {
+        abort(400);
+    }
+
+    $names = explode('\\', $address);
+
+    $info = [
+        'name' => end($names),
+        'parent' => getParent($address),
+        'is_dir' => is_dir($address),
+    ];
+
+    view('move', $info);
+    return;
+
+}
+
 function moveController()
 {
-    dd('its move');
+    $address = validAddress(query('address'));
+    if ($address == null || !file_exists($address)) {
+        abort(400);
+        return;
+    }
 
+    $path = validAddress(request('path'));
+    if (is_null($path) || trim($path == '')) {
+        abort(400);
+        return;
+    }
+    if (is_dir($address)) {
+        copyDirectory($address, $path);
+        deleteDirectory($address);
+    } else {
+        copyFile($address, $path);
+        deleteFile($address);
+    }
+
+    header('Location: /?address='.getParent($address));
+    return;
 }
 
 

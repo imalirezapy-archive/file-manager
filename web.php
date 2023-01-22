@@ -24,6 +24,7 @@ put('/createDir','createDirController');
 get('/copy', 'copyIndexController');
 post('/copy', 'copyController');
 
-get('/move', 'moveController');
+get('/move', 'moveIndexController');
+post('/move', 'moveController');
 
 solve();
