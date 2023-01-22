@@ -75,7 +75,7 @@
                 <form action method="post" id="regForm">
 
                     <h1 id="register">
-                        Copy
+                        Move
                         <span class="text-danger">'<?= $name ?>'</span>
                         <?= $is_dir ? ' directory' : ' file' ?>
                     </h1>
