@@ -92,9 +92,6 @@ function removeController()
     header('Location: /?address='.getParent($address));
 }
 
-
-
-
 function createFileIndexController()
 {
     $address = validAddress(query('address'));
@@ -157,12 +154,43 @@ function createDirController()
 
 function copyIndexController()
 {
-    dd('its copy');
+    $address = validAddress(query('address'));
+
+    if ($address == null || !file_exists($address)) {
+        abort(400);
+    }
+
+    $names = explode('\\', $address);
+
+    $info = [
+        'name' => end($names),
+        'parent' => getParent($address),
+        'is_dir' => is_dir($address),
+    ];
+    view('copy', $info);
+    return;
 }
 function copyController()
 {
-    dd('its copy');
+    $address = validAddress(query('address'));
+    if ($address == null || !file_exists($address)) {
+        abort(400);
+        return;
+    }
 
+    $path = validAddress(request('path'));
+    if (is_null($path) || trim($path == '')) {
+        abort(400);
+        return;
+    }
+    if (is_dir($address)) {
+        copyDirectory($address, $path);
+    } else {
+        copyFile($address, $path);
+    }
+
+    header('Location: /?address='.getParent($address));
+    return;
 }
 
 function moveController()
