@@ -6,9 +6,9 @@ function validAddress($address)
     if (is_null($address) or $address == '') {
         return null;
     }
-    $address = preg_replace('/[\\\|\/]+/', '\\', trim($address));
-    if ($address[strlen($address)-1] == '\\'){
-        $address = join('\\', array_filter(explode('\\', $address), fn($i) => $i != ''));
+    $address = preg_replace('/[\\\|\/]+/', DIRECTORY_SEPARATOR, trim($address));
+    if ($address[strlen($address)-1] == DIRECTORY_SEPARATOR){
+        $address = join(DIRECTORY_SEPARATOR, array_filter(explode(DIRECTORY_SEPARATOR, $address), fn($i) => $i != ''));
 
     }
 
@@ -20,8 +20,8 @@ function validAddress($address)
 function getParent($address)
 {
     $address = validAddress($address);
-    $parent_address = explode('\\', $address);
-    $parent_address = join('\\', array_slice($parent_address, 0, count($parent_address)-1));
+    $parent_address = explode(DIRECTORY_SEPARATOR, $address);
+    $parent_address = join(DIRECTORY_SEPARATOR, array_slice($parent_address, 0, count($parent_address)-1));
     return $parent_address;
 
 };
@@ -165,9 +165,9 @@ function searchFile($name, $address)
         $path = pathinfo($filename);
         if ($path['basename'] == $name) {
 //            $last_path = explode('/',$path['dirname']);
-            $path = $path['dirname'].'\\'.$path['basename'];
+            $path = $path['dirname'].DIRECTORY_SEPARATOR.$path['basename'];
 
-            $files[] = str_replace('./', '',str_replace('\\' ,'/', $path));
+            $files[] = str_replace('./', '',str_replace(DIRECTORY_SEPARATOR ,'/', $path));
         }
     }
     return $files;
@@ -256,6 +256,13 @@ function dd($value)
 
 }
 
+function dump($value)
+{
+    echo '<pre>';
+    var_dump($value);
+    echo '</pre>';
+}
+
 function abort($code)
 {
     http_response_code($code);
@@ -269,21 +276,22 @@ function abort($code)
 function addressMap()
 {
 
-    $address = validAddress(query('address'));
+    $address = explode(DIRECTORY_SEPARATOR, validAddress(query('address')));
     $map = [];
-    $href = '';
-    foreach (explode('\\', $address) as $dir) {
-        $href .= $dir . '/';
-        $url = validAddress($href);
-        if (!file_exists($url)) {
+
+    foreach ($address as $key => $dir) {
+        $href = join(DIRECTORY_SEPARATOR, array_slice($address, 0, $key+1));
+
+        if (!file_exists($href)) {
             $url = null;
         }
         $map[] = [
             'name' => $dir,
-            'href' => $url,
+            'href' => $href,
         ];
 
     }
+
     return $map;
 }
 
@@ -328,11 +336,11 @@ function copyDirectory(
             continue;
         }
 
-        if (is_dir("$sourceDirectory/$file") === true) {
-            copyDirectory("$sourceDirectory/$file", "$destinationDirectory/$file");
+        if (is_dir("$sourceDirectory". DIRECTORY_SEPARATOR. $file) === true) {
+            copyDirectory("$sourceDirectory". DIRECTORY_SEPARATOR. $file, "$destinationDirectory". DIRECTORY_SEPARATOR. $file);
         }
         else {
-            copy("$sourceDirectory/$file", "$destinationDirectory/$file");
+            copy("$sourceDirectory". DIRECTORY_SEPARATOR. $file, "$destinationDirectory". DIRECTORY_SEPARATOR. $file);
         }
     }
 

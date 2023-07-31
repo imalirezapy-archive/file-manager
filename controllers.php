@@ -14,7 +14,7 @@ function homeController()
 function renameIndexController()
 {
     $address = validAddress(query('address'));
-    $names = explode('\\', $address);
+    $names = explode(DIRECTORY_SEPARATOR, $address);
     $info = [
         'name' => end($names),
         'parent' => getParent($address),
@@ -41,23 +41,23 @@ function renameController()
         return;
     };
 
-    $path = explode('\\', $address);
+    $path = explode(DIRECTORY_SEPARATOR, $address);
     if ($name[0] == end($path)){
         header('Location: /?address='.getParent($address));
         return;
     }
 
 
-    $path = join('\\', array_slice($path, 0, count($path)-1));
+    $path = join(DIRECTORY_SEPARATOR, array_slice($path, 0, count($path)-1));
 
     if (is_dir($address)) {
-        copyDirectory($address, $path. '\\' . $name[0]);
+        copyDirectory($address, $path. DIRECTORY_SEPARATOR . $name[0]);
         deleteDirectory($address);
         header('Location: /?address='.getParent($address));
         return;
     };
 
-   rename($address, $path . '\\' . $name[0]);
+   rename($address, $path . DIRECTORY_SEPARATOR . $name[0]);
    header('Location: /?address='.getParent($address));
     return;
 
@@ -67,7 +67,7 @@ function removeIndexController()
 {
     $address = validAddress(query('address'));
     #TODO: convert address to php constant
-    $names = explode('\\', $address);
+    $names = explode(DIRECTORY_SEPARATOR, $address);
 
     $info = [
         'name' => end($names),
@@ -160,7 +160,7 @@ function copyIndexController()
         abort(400);
     }
 
-    $names = explode('\\', $address);
+    $names = explode(DIRECTORY_SEPARATOR, $address);
 
     $info = [
         'name' => end($names),
@@ -201,7 +201,7 @@ function moveIndexController()
         abort(400);
     }
 
-    $names = explode('\\', $address);
+    $names = explode(DIRECTORY_SEPARATOR, $address);
 
     $info = [
         'name' => end($names),

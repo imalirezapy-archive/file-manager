@@ -1,7 +1,5 @@
 <?php
-
-require_once __DIR__ . '/controllers.php';
-
+require_once __DIR__ . "{$dir_sep}controllers.php";
 
 get('/', 'homeController');
 
@@ -14,12 +12,8 @@ delete('/remove', 'removeController');
 get('/createFile', 'createFileIndexController');
 put('/createFile','createFileController');
 
-
 get('/createDir', 'createDirIndexController');
 put('/createDir','createDirController');
-
-
-
 
 get('/copy', 'copyIndexController');
 post('/copy', 'copyController');
